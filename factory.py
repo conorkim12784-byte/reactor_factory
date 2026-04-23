@@ -438,13 +438,72 @@ async def cb_bot_rtype_set(query: CallbackQuery) -> None:
 @factory_dp.callback_query(F.data == "user:help")
 async def cb_user_help(query: CallbackQuery) -> None:
     text = (
-        "ℹ️ <b>إزاي تستخدم المصنع؟</b>\n\n"
-        "1. روح @BotFather واعمل بوت جديد.\n"
-        "2. خد التوكن وابعتهولي.\n"
-        "3. اختار نوع الريأكشن اللي عايز البوت يحطه.\n"
-        "4. استنى المطور يوافق.\n"
-        "5. ضيف البوت بتاعك <b>أدمن</b> في القناة.\n"
-        "6. هيبدأ يحط ريأكشنز تلقائي على كل منشور 🎉\n"
+        "╔══════ ⚜️ ══════╗\n"
+        "   <b>🏭 دليل المصنع</b>\n"
+        "╚══════ ⚜️ ══════╝\n"
+        "\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>✨ يعني إيه المصنع؟</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "<i>منصة بتخليك تعمل بوت ريأكشن خاص بيك،\n"
+        "يحط تفاعلات تلقائي على كل منشور في قناتك.</i>\n"
+        "\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>⚡ خطوات التشغيل</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "\n"
+        "┌─ <b>𝟏 ▸ اعمل بوت</b>\n"
+        "│   روح <a href=\"https://t.me/BotFather\">@BotFather</a>\n"
+        "│   ابعت <code>/newbot</code> واتبع الخطوات.\n"
+        "└──────────────\n"
+        "\n"
+        "┌─ <b>𝟐 ▸ هات التوكن</b>\n"
+        "│   هيديك توكن شكله كده:\n"
+        "│   <code>123456789:AAH...XYZ</code>\n"
+        "└──────────────\n"
+        "\n"
+        "┌─ <b>𝟑 ▸ ابعتهولي</b>\n"
+        "│   من قائمة «➕ إضافة بوت».\n"
+        "│   ابعت التوكن في الشات.\n"
+        "└──────────────\n"
+        "\n"
+        "┌─ <b>𝟒 ▸ اختار شخصية البوت</b>\n"
+        "│   نوع الريأكشن (إيجابي / حماس /\n"
+        "│   ضحك / حب ... إلخ).\n"
+        "└──────────────\n"
+        "\n"
+        "┌─ <b>𝟓 ▸ استنى الموافقة</b>\n"
+        "│   المطور بيراجع الطلب بسرعة.\n"
+        "│   هيوصلك إشعار لما يتقبل.\n"
+        "└──────────────\n"
+        "\n"
+        "┌─ <b>𝟔 ▸ ضيفه أدمن في قناتك</b>\n"
+        "│   مع صلاحية «إضافة تفاعلات».\n"
+        "└──────────────\n"
+        "\n"
+        "┌─ <b>𝟕 ▸ خلاص! استمتع 🎉</b>\n"
+        "│   كل منشور جديد هيتفاعل عليه\n"
+        "│   تلقائي خلال ثواني.\n"
+        "└──────────────\n"
+        "\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>🎭 أنواع الريأكشن</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "👍 إيجابي  •  ❤️ حب  •  🔥 حماس\n"
+        "😂 ضحك  •  😱 صدمة  •  🎉 احتفال\n"
+        "<i>تقدر تغيّر النوع في أي وقت من «🤖 بوتاتي».</i>\n"
+        "\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>💡 نصايح سريعة</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "▸ تأكد إن البوت أدمن فعلاً.\n"
+        "▸ لازم القناة تسمح بالتفاعلات.\n"
+        "▸ نوع الريأكشن بيتطابق مع تفاعلات\n"
+        "   القناة المسموح بيها.\n"
+        "\n"
+        "╔══════ ⚜️ ══════╗\n"
+        "   <b>تفضّل ابدأ دلوقتي</b>\n"
+        "╚══════ ⚜️ ══════╝"
     )
     await _edit_or_send(query, text, reply_markup=kbs.kb_back("user:home"))
     await query.answer()
@@ -667,16 +726,11 @@ async def cb_adm_home(query: CallbackQuery, state: FSMContext) -> None:
         await query.answer("🟥 مش مسموح", show_alert=True)
         return
     await state.clear()
-    try:
-        await query.message.edit_text(
-            "👑 <b>قائمة المطور</b>\nاختار العملية:",
-            parse_mode="HTML", reply_markup=kbs.kb_admin_main(),
-        )
-    except Exception:
-        await query.message.answer(
-            "👑 <b>قائمة المطور</b>\nاختار العملية:",
-            parse_mode="HTML", reply_markup=kbs.kb_admin_main(),
-        )
+    await _edit_or_send(
+        query,
+        "👑 <b>قائمة المطور</b>\nاختار العملية:",
+        reply_markup=kbs.kb_admin_main(),
+    )
     await query.answer()
 
 
@@ -704,14 +758,7 @@ async def cb_adm_stats(query: CallbackQuery) -> None:
         f"🟦 إجمالي القنوات: <b>{total_channels}</b>\n"
         f"🟦 قنوات اشتراك إجباري: <b>{len(fsub)}</b>"
     )
-    try:
-        await query.message.edit_text(
-            text, parse_mode="HTML", reply_markup=kbs.kb_admin_back(),
-        )
-    except Exception:
-        await query.message.answer(
-            text, parse_mode="HTML", reply_markup=kbs.kb_admin_back(),
-        )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_admin_back())
     await query.answer()
 
 
@@ -733,14 +780,7 @@ async def cb_adm_bots(query: CallbackQuery) -> None:
                 f"   👤 {info.get('owner_name','?')}"
             )
         text = "\n".join(lines)
-    try:
-        await query.message.edit_text(
-            text, parse_mode="HTML", reply_markup=kbs.kb_admin_back(),
-        )
-    except Exception:
-        await query.message.answer(
-            text, parse_mode="HTML", reply_markup=kbs.kb_admin_back(),
-        )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_admin_back())
     await query.answer()
 
 
@@ -751,19 +791,27 @@ async def cb_adm_pending(query: CallbackQuery) -> None:
         return
     pending = storage.load_pending()
     if not pending:
-        try:
-            await query.message.edit_text(
-                "🟦 مفيش طلبات معلقة.", reply_markup=kbs.kb_admin_back(),
-            )
-        except Exception:
-            await query.message.answer(
-                "🟦 مفيش طلبات معلقة.", reply_markup=kbs.kb_admin_back(),
-            )
+        await _edit_or_send(
+            query, "🟦 مفيش طلبات معلقة.", reply_markup=kbs.kb_admin_back(),
+        )
         await query.answer()
         return
 
+    # نعرض أول طلب في نفس الرسالة، والباقي إن وُجد كرسائل صغيرة بعدها
+    items = list(pending.items())
+    bid, info = items[0]
+    head = (
+        "⏳ <b>طلبات معلقة</b>\n\n"
+        f"🤖 <b>{info.get('first_name','?')}</b> (@{info.get('username','?')})\n"
+        f"   ID: <code>{bid}</code>\n"
+        f"👤 {info.get('owner_name','?')}"
+    )
+    if len(items) > 1:
+        head += f"\n\n📋 إجمالي الطلبات: <b>{len(items)}</b>"
+    await _edit_or_send(query, head, reply_markup=kbs.kb_approve(bid))
     await query.answer()
-    for bid, info in pending.items():
+
+    for bid, info in items[1:]:
         text = (
             "⏳ <b>طلب معلق</b>\n\n"
             f"🤖 <b>{info.get('first_name','?')}</b> (@{info.get('username','?')})\n"
@@ -795,14 +843,7 @@ async def cb_adm_users(query: CallbackQuery) -> None:
         if len(users) > 30:
             lines.append(f"\n... و{len(users) - 30} مستخدم تاني")
         text = "\n".join(lines)
-    try:
-        await query.message.edit_text(
-            text, parse_mode="HTML", reply_markup=kbs.kb_admin_back(),
-        )
-    except Exception:
-        await query.message.answer(
-            text, parse_mode="HTML", reply_markup=kbs.kb_admin_back(),
-        )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_admin_back())
     await query.answer()
 
 
@@ -822,16 +863,9 @@ async def cb_adm_broadcast(query: CallbackQuery, state: FSMContext) -> None:
         "🟦 كل القنوات اللي البوتات الفرعية فيها\n\n"
         "<i>تقدر تبعت نص أو صورة أو فيديو أو أي حاجة.</i>"
     )
-    try:
-        await query.message.edit_text(
-            text, parse_mode="HTML",
-            reply_markup=kbs.kb_cancel_action("adm:home"),
-        )
-    except Exception:
-        await query.message.answer(
-            text, parse_mode="HTML",
-            reply_markup=kbs.kb_cancel_action("adm:home"),
-        )
+    await _edit_or_send(
+        query, text, reply_markup=kbs.kb_cancel_action("adm:home"),
+    )
     await query.answer()
 
 
@@ -870,28 +904,75 @@ async def on_broadcast_message(message: Message, state: FSMContext) -> None:
         await asyncio.sleep(0.05)  # حماية من الحظر
 
     # 2) إذاعة لكل القنوات عبر كل بوت فرعي شغال
+    # ملاحظة مهمة: copy_message مش هيشتغل بين بوتين مختلفين، لأن البوت الفرعي
+    # مش شايف الرسالة الأصلية اللي عند البوت الرئيسي. لازم نعيد بناء الرسالة
+    # ونبعتها بالبوت الفرعي مباشرة (نص/صورة/فيديو/...).
     sent_channels = 0
     failed_channels = 0
+
+    # نجهّز محتوى الرسالة مرة واحدة
+    bcast_text = message.html_text or message.caption_html or ""
+    bcast_kind = "text"
+    bcast_file = None
+    if message.photo:
+        bcast_kind = "photo"
+        bcast_file = message.photo[-1].file_id
+    elif message.video:
+        bcast_kind = "video"
+        bcast_file = message.video.file_id
+    elif message.animation:
+        bcast_kind = "animation"
+        bcast_file = message.animation.file_id
+    elif message.document:
+        bcast_kind = "document"
+        bcast_file = message.document.file_id
+    elif message.audio:
+        bcast_kind = "audio"
+        bcast_file = message.audio.file_id
+    elif message.voice:
+        bcast_kind = "voice"
+        bcast_file = message.voice.file_id
+
+    async def _send_via(rb_bot, cid_int: int) -> bool:
+        try:
+            if bcast_kind == "text":
+                if not bcast_text:
+                    return False
+                await rb_bot.send_message(cid_int, bcast_text, parse_mode="HTML")
+            elif bcast_kind == "photo":
+                await rb_bot.send_photo(cid_int, bcast_file, caption=bcast_text or None, parse_mode="HTML")
+            elif bcast_kind == "video":
+                await rb_bot.send_video(cid_int, bcast_file, caption=bcast_text or None, parse_mode="HTML")
+            elif bcast_kind == "animation":
+                await rb_bot.send_animation(cid_int, bcast_file, caption=bcast_text or None, parse_mode="HTML")
+            elif bcast_kind == "document":
+                await rb_bot.send_document(cid_int, bcast_file, caption=bcast_text or None, parse_mode="HTML")
+            elif bcast_kind == "audio":
+                await rb_bot.send_audio(cid_int, bcast_file, caption=bcast_text or None, parse_mode="HTML")
+            elif bcast_kind == "voice":
+                await rb_bot.send_voice(cid_int, bcast_file, caption=bcast_text or None, parse_mode="HTML")
+            return True
+        except TelegramAPIError as e:
+            log.warning("فشل بث في القناة %s عبر البوت %s: %s", cid_int, getattr(rb_bot, "id", "?"), e)
+            return False
+        except Exception as e:
+            log.warning("خطأ غير متوقع في البث للقناة %s: %s", cid_int, e)
+            return False
+
     for bid, chat_ids in channels_per_bot.items():
         rb = running_bots.get(bid)
         if not rb or not chat_ids:
             continue
         for cid in chat_ids:
             try:
-                await message.copy_to(chat_id=int(cid))
-                # نبعت من البوت الرئيسي للمستخدمين، لكن للقنوات لازم البوت الفرعي
-                # نعيد ونرسل من البوت الفرعي:
-            except TelegramAPIError:
-                pass
-            try:
-                # استخدم البوت الفرعي للنشر في قناته
-                await rb.bot.copy_message(
-                    chat_id=int(cid),
-                    from_chat_id=message.chat.id,
-                    message_id=message.message_id,
-                )
+                cid_int = int(cid)
+            except (ValueError, TypeError):
+                failed_channels += 1
+                continue
+            ok = await _send_via(rb.bot, cid_int)
+            if ok:
                 sent_channels += 1
-            except TelegramAPIError:
+            else:
                 failed_channels += 1
             await asyncio.sleep(0.05)
 
@@ -930,14 +1011,7 @@ async def cb_adm_fsub(query: CallbackQuery) -> None:
             tag = f" — @{uname}" if uname else ""
             lines.append(f"• <b>{c.get('title','قناة')}</b>{tag}\n  <code>{c['id']}</code>")
         text = "\n".join(lines)
-    try:
-        await query.message.edit_text(
-            text, parse_mode="HTML", reply_markup=kbs.kb_fsub_admin(channels),
-        )
-    except Exception:
-        await query.message.answer(
-            text, parse_mode="HTML", reply_markup=kbs.kb_fsub_admin(channels),
-        )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_fsub_admin(channels))
     await query.answer()
 
 
@@ -952,16 +1026,9 @@ async def cb_fsub_add(query: CallbackQuery, state: FSMContext) -> None:
         "ابعتلي يوزر القناة (مثلاً <code>@mychannel</code>) أو الـ ID العددي.\n\n"
         "<b>مهم:</b> لازم البوت الرئيسي يكون <b>أدمن</b> في القناة دي عشان يقدر يفحص اشتراك المستخدمين."
     )
-    try:
-        await query.message.edit_text(
-            text, parse_mode="HTML",
-            reply_markup=kbs.kb_cancel_action("adm:fsub"),
-        )
-    except Exception:
-        await query.message.answer(
-            text, parse_mode="HTML",
-            reply_markup=kbs.kb_cancel_action("adm:fsub"),
-        )
+    await _edit_or_send(
+        query, text, reply_markup=kbs.kb_cancel_action("adm:fsub"),
+    )
     await query.answer()
 
 
