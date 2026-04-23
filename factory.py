@@ -204,7 +204,7 @@ async def enforce_subscription(user_id: int, target_chat_id: int) -> bool:
 # ─── شاشة /start ────────────────────────────────────
 
 async def send_start_screen(chat_id: int, user_id: int, user_name: str = "") -> None:
-    greeting = (        f"
+    greeting = (        f"""
 ╭───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤
 │╭───────────⟢
 ╞𝗧- <b>{user_name or ''}</b>
@@ -220,7 +220,7 @@ async def send_start_screen(chat_id: int, user_id: int, user_name: str = "") -> 
 │╭────────────╯
 ╞𝗧- ضيـف الـبوت ادمـن في قناتك 
 │╰───────────⟢
-╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"
+╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"""
     )
     keyboard = kbs.kb_admin_main() if is_admin(user_id) else kbs.kb_user_main()
     try:
@@ -290,7 +290,7 @@ async def cb_user_home(query: CallbackQuery, state: FSMContext) -> None:
     if not await enforce_subscription(query.from_user.id, query.message.chat.id):
         await query.answer()
         return
-    text = f"
+    text = f"""
 ╭───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤
 │╭───────────⟢
 ╞𝗧- <b>{query.from_user.full_name}</b>
@@ -306,7 +306,7 @@ async def cb_user_home(query: CallbackQuery, state: FSMContext) -> None:
 │╭────────────╯
 ╞𝗧- ضيـف الـبوت ادمـن في قناتك 
 │╰───────────⟢
-╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"
+╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"""
     await _edit_or_send(query, text, reply_markup=kbs.kb_user_main())
     await query.answer()
 
