@@ -204,13 +204,23 @@ async def enforce_subscription(user_id: int, target_chat_id: int) -> bool:
 # ─── شاشة /start ────────────────────────────────────
 
 async def send_start_screen(chat_id: int, user_id: int, user_name: str = "") -> None:
-    greeting = (
-        f"👋 <b>أهلاً {user_name or 'بيك'}!</b>\n\n"
-        "🏭 ده <b>مصنع بوتات الريأكشن</b>\n"
-        "اعمل بوت ريأكتر خاص بيك في خطوات بسيطة:\n\n"
-        "1️⃣ هات توكن من @BotFather\n"
-        "2️⃣ ابعتهولي وانتظر موافقة المطور\n"
-        "3️⃣ ضيف بوتك أدمن في قناتك → هيحط ريأكشنز تلقائي 🎉"
+    greeting = (        f"
+╭───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤
+│╭───────────⟢
+╞𝗧- <b>{user_name or ''}</b>
+╞╡ 
+╞𝗧-     ده مـصنع بـوتات تفاعلـية
+╞╡
+╞𝗧-     اعمـل بـوت خـاص بـيك
+╞╡
+╞𝗧-    @BotFather هـات تـوكن من
+╞╡
+╞𝗧-          ابـعت التـوكن هنا
+│╰────────────╮
+│╭────────────╯
+╞𝗧- ضيـف الـبوت ادمـن في قناتك 
+│╰───────────⟢
+╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"
     )
     keyboard = kbs.kb_admin_main() if is_admin(user_id) else kbs.kb_user_main()
     try:
@@ -249,7 +259,7 @@ async def cmd_admin(message: Message) -> None:
     if not is_admin(message.from_user.id):
         return
     await message.answer(
-        "👑 <b>قائمة المطور</b>\nاختار العملية:",
+        " <b>قائمة المطور</b>\nاختار العملية:",
         parse_mode="HTML", reply_markup=kbs.kb_admin_main(),
     )
 
@@ -280,7 +290,23 @@ async def cb_user_home(query: CallbackQuery, state: FSMContext) -> None:
     if not await enforce_subscription(query.from_user.id, query.message.chat.id):
         await query.answer()
         return
-    text = f"👋 <b>أهلاً {query.from_user.full_name}!</b>\nاختار من القائمة 👇"
+    text = f"
+╭───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤
+│╭───────────⟢
+╞𝗧- <b>{query.from_user.full_name}</b>
+╞╡ 
+╞𝗧-     ده مـصنع بـوتات تفاعلـية
+╞╡
+╞𝗧-     اعمـل بـوت خـاص بـيك
+╞╡
+╞𝗧-    @BotFather هـات تـوكن من
+╞╡
+╞𝗧-          ابـعت التـوكن هنا
+│╰────────────╮
+│╭────────────╯
+╞𝗧- ضيـف الـبوت ادمـن في قناتك 
+│╰───────────⟢
+╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"
     await _edit_or_send(query, text, reply_markup=kbs.kb_user_main())
     await query.answer()
 
