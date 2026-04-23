@@ -57,6 +57,49 @@ class AdminStates(StatesGroup):
 
 class UserStates(StatesGroup):
     waiting_token = State()
+    # المستخدم بعت توكن صحيح وبيختار نوع الريأكشن
+    choosing_reaction = State()
+
+
+# tmp store: user_id -> {bot_id, token, info, owner_*}
+# نخزن مؤقتاً بيانات التوكن أثناء اختيار النوع، عشان مانعملش رسائل جديدة
+_pending_token_choice: dict[int, dict] = {}
+
+
+# ─── Helpers لتعديل الرسائل بدل إرسال جديدة ────────
+
+async def _safe_edit(message: Message, text: str, reply_markup=None) -> bool:
+    """
+    يحاول يعدّل الرسالة (caption لو فيها وسائط، أو text عادي).
+    يرجّع True لو نجح. لو فشل (مثلاً الرسالة قديمة جداً) ما يبعتش رسالة جديدة.
+    """
+    try:
+        if message.caption is not None or message.photo or message.animation or message.video:
+            await message.edit_caption(
+                caption=text, parse_mode="HTML", reply_markup=reply_markup,
+            )
+        else:
+            await message.edit_text(
+                text, parse_mode="HTML", reply_markup=reply_markup,
+            )
+        return True
+    except TelegramAPIError:
+        return False
+    except Exception:
+        return False
+
+
+async def _edit_or_send(query: CallbackQuery, text: str, reply_markup=None) -> None:
+    """
+    يحاول يعدّل رسالة الكولباك. لو ما قدرش (لأنها وسائط بدون caption مثلاً
+    أو تخطّت 48 ساعة)، يبعت رسالة جديدة كـ fallback أخير.
+    """
+    if await _safe_edit(query.message, text, reply_markup):
+        return
+    try:
+        await query.message.answer(text, parse_mode="HTML", reply_markup=reply_markup)
+    except TelegramAPIError:
+        pass
 
 
 # ─── أدوات ──────────────────────────────────────────
@@ -237,19 +280,8 @@ async def cb_user_home(query: CallbackQuery, state: FSMContext) -> None:
     if not await enforce_subscription(query.from_user.id, query.message.chat.id):
         await query.answer()
         return
-    try:
-        await query.message.edit_caption(
-            caption=f"👋 <b>أهلاً {query.from_user.full_name}!</b>\nاختار من القائمة 👇",
-            parse_mode="HTML", reply_markup=kbs.kb_user_main(),
-        )
-    except Exception:
-        try:
-            await query.message.edit_text(
-                f"👋 <b>أهلاً {query.from_user.full_name}!</b>\nاختار من القائمة 👇",
-                parse_mode="HTML", reply_markup=kbs.kb_user_main(),
-            )
-        except Exception:
-            pass
+    text = f"👋 <b>أهلاً {query.from_user.full_name}!</b>\nاختار من القائمة 👇"
+    await _edit_or_send(query, text, reply_markup=kbs.kb_user_main())
     await query.answer()
 
 
@@ -264,8 +296,8 @@ async def cb_user_add_bot(query: CallbackQuery, state: FSMContext) -> None:
         "هتجيبه من @BotFather بأمر <code>/newbot</code> أو <code>/mybots</code>.\n\n"
         "<i>مثال:</i> <code>123456789:AAH...XYZ</code>"
     )
-    await query.message.answer(
-        text, parse_mode="HTML",
+    await _edit_or_send(
+        query, text,
         reply_markup=kbs.kb_cancel_action("user:cancel_token"),
     )
     await query.answer()
@@ -274,13 +306,9 @@ async def cb_user_add_bot(query: CallbackQuery, state: FSMContext) -> None:
 @factory_dp.callback_query(F.data == "user:cancel_token")
 async def cb_user_cancel_token(query: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
-    try:
-        await query.message.edit_text(
-            "🟥 اتلغى. ارجع للقائمة بـ /start",
-            reply_markup=kbs.kb_back("user:home"),
-        )
-    except Exception:
-        pass
+    _pending_token_choice.pop(query.from_user.id, None)
+    text = f"👋 <b>أهلاً {query.from_user.full_name}!</b>\nاختار من القائمة 👇"
+    await _edit_or_send(query, text, reply_markup=kbs.kb_user_main())
     await query.answer("اتلغى")
 
 
@@ -290,24 +318,96 @@ async def cb_user_my_bots(query: CallbackQuery) -> None:
         await query.answer()
         return
     tokens = storage.load_tokens()
-    mine = {bid: t for bid, t in tokens.items() if t.get("owner_id") == query.from_user.id}
+    mine = [(bid, t) for bid, t in tokens.items() if t.get("owner_id") == query.from_user.id]
     if not mine:
-        await query.message.answer(
-            "🟦 لسه ماعندكش بوتات معتمدة. ابعت توكن من «➕ إضافة بوت ريأكشن جديد».",
+        await _edit_or_send(
+            query,
+            "🟦 لسه ماعندكش بوتات معتمدة.\nابعت توكن من «➕ إضافة بوت ريأكشن جديد».",
             reply_markup=kbs.kb_back("user:home"),
         )
         await query.answer()
         return
-    lines = ["<b>🤖 بوتاتك:</b>\n"]
-    for bid, info in mine.items():
-        running = "🟢 شغال" if bid in running_bots else "🔴 متوقف"
-        lines.append(f"• @{info.get('username','?')} — {running}")
-    await query.message.answer(
-        "\n".join(lines), parse_mode="HTML",
-        reply_markup=kbs.kb_back("user:home"),
+
+    bots_for_kb = [
+        (bid, info.get("username", ""), bid in running_bots)
+        for bid, info in mine
+    ]
+    text = (
+        "<b>🤖 بوتاتك:</b>\n\n"
+        "اضغط على أي بوت عشان تعدّل إعداداته (نوع الريأكشن، إلخ)."
+    )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_my_bots(bots_for_kb))
+    await query.answer()
+
+
+@factory_dp.callback_query(F.data.startswith("bot:open:"))
+async def cb_bot_open(query: CallbackQuery) -> None:
+    bot_id = query.data.split(":", 2)[2]
+    tokens = storage.load_tokens()
+    info = tokens.get(bot_id)
+    if not info or info.get("owner_id") != query.from_user.id:
+        await query.answer("🟥 البوت ده مش بتاعك", show_alert=True)
+        return
+    rtype = info.get("reaction_type") or "mixed"
+    from reactions import get_reaction_label
+    running = "🟢 شغال" if bot_id in running_bots else "🔴 متوقف"
+    text = (
+        f"⚙️ <b>إعدادات البوت</b>\n\n"
+        f"🤖 @{info.get('username','?')}\n"
+        f"الحالة: {running}\n"
+        f"🎭 نوع الريأكشن الحالي: <b>{get_reaction_label(rtype)}</b>"
+    )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_bot_settings(bot_id))
+    await query.answer()
+
+
+@factory_dp.callback_query(F.data.startswith("bot:rtype:"))
+async def cb_bot_rtype(query: CallbackQuery) -> None:
+    bot_id = query.data.split(":", 2)[2]
+    tokens = storage.load_tokens()
+    info = tokens.get(bot_id)
+    if not info or info.get("owner_id") != query.from_user.id:
+        await query.answer("🟥 مش بتاعك", show_alert=True)
+        return
+    current = info.get("reaction_type") or "mixed"
+    text = (
+        "🎭 <b>اختار نوع الريأكشن</b>\n\n"
+        "النوع ده هو اللي البوت هيستخدمه على المنشورات في كل قنواتك.\n"
+        "تقدر تغيّره في أي وقت."
+    )
+    await _edit_or_send(
+        query, text,
+        reply_markup=kbs.kb_change_reaction_types(bot_id, current=current),
     )
     await query.answer()
 
+
+@factory_dp.callback_query(F.data.startswith("rchg:"))
+async def cb_bot_rtype_set(query: CallbackQuery) -> None:
+    parts = query.data.split(":", 2)
+    if len(parts) != 3:
+        await query.answer()
+        return
+    _, bot_id, new_type = parts
+    tokens = storage.load_tokens()
+    info = tokens.get(bot_id)
+    if not info or info.get("owner_id") != query.from_user.id:
+        await query.answer("🟥 مش بتاعك", show_alert=True)
+        return
+    storage.set_reaction_type(bot_id, new_type)
+    from reactions import get_reaction_label
+    await query.answer(f"✅ اتغيّر إلى: {get_reaction_label(new_type)}")
+    # حدّث نفس الرسالة بدل ما نبعت جديدة
+    info = storage.load_tokens().get(bot_id, info)
+    running = "🟢 شغال" if bot_id in running_bots else "🔴 متوقف"
+    text = (
+        f"⚙️ <b>إعدادات البوت</b>\n\n"
+        f"🤖 @{info.get('username','?')}\n"
+        f"الحالة: {running}\n"
+        f"🎭 نوع الريأكشن الحالي: <b>{get_reaction_label(new_type)}</b>\n\n"
+        f"🟩 تم الحفظ."
+    )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_bot_settings(bot_id))
 
 @factory_dp.callback_query(F.data == "user:help")
 async def cb_user_help(query: CallbackQuery) -> None:
@@ -315,13 +415,12 @@ async def cb_user_help(query: CallbackQuery) -> None:
         "ℹ️ <b>إزاي تستخدم المصنع؟</b>\n\n"
         "1. روح @BotFather واعمل بوت جديد.\n"
         "2. خد التوكن وابعتهولي.\n"
-        "3. استنى المطور يوافق.\n"
-        "4. ضيف البوت بتاعك <b>أدمن</b> في القناة.\n"
-        "5. هيبدأ يحط ريأكشنز تلقائي على كل منشور 🎉\n"
+        "3. اختار نوع الريأكشن اللي عايز البوت يحطه.\n"
+        "4. استنى المطور يوافق.\n"
+        "5. ضيف البوت بتاعك <b>أدمن</b> في القناة.\n"
+        "6. هيبدأ يحط ريأكشنز تلقائي على كل منشور 🎉\n"
     )
-    await query.message.answer(
-        text, parse_mode="HTML", reply_markup=kbs.kb_back("user:home"),
-    )
+    await _edit_or_send(query, text, reply_markup=kbs.kb_back("user:home"))
     await query.answer()
 
 
@@ -334,16 +433,18 @@ async def on_token_message(message: Message, state: FSMContext) -> None:
 
     text = (message.text or "").strip()
 
+    # رسالة الحالة الموحّدة — هنفضل نعدّلها بدل ما نبعت رسائل جديدة
+    status_msg = await message.answer("🟦 بتأكد من التوكن...")
+
     if not is_valid_token_format(text):
-        await message.answer(
+        await status_msg.edit_text(
             "🟥 ده مش شكل توكن صحيح.\n"
-            "التوكن لازم يبقى زي: <code>123456789:AAH...XYZ</code>",
+            "التوكن لازم يبقى زي: <code>123456789:AAH...XYZ</code>\n\n"
+            "ابعت توكن تاني أو ألغِ.",
             parse_mode="HTML",
             reply_markup=kbs.kb_cancel_action("user:cancel_token"),
         )
         return
-
-    status_msg = await message.answer("🟦 بتأكد من التوكن...")
 
     if storage.token_exists(text):
         await status_msg.edit_text(
@@ -366,38 +467,82 @@ async def on_token_message(message: Message, state: FSMContext) -> None:
     owner = message.from_user
     owner_name = owner.full_name + (f" (@{owner.username})" if owner.username else "")
 
-    storage.add_pending(bot_id, {
+    # نخزن البيانات مؤقتاً ونروح خطوة اختيار النوع — بدون رسالة جديدة
+    _pending_token_choice[owner.id] = {
+        "bot_id": bot_id,
         "token": text,
         "username": info["username"],
         "first_name": info["first_name"],
         "owner_id": owner.id,
         "owner_name": owner_name,
-    })
+        "status_chat_id": status_msg.chat.id,
+        "status_message_id": status_msg.message_id,
+    }
+    await state.set_state(UserStates.choosing_reaction)
 
     await status_msg.edit_text(
         f"🟩 التوكن صحيح!\n"
         f"🤖 <b>{info['first_name']}</b> (@{info['username']})\n\n"
-        f"⏳ في انتظار موافقة المطور...",
+        f"🎭 <b>اختار نوع الريأكشن</b> اللي عايز البوت يحطه على المنشورات:",
         parse_mode="HTML",
-        reply_markup=kbs.kb_back("user:home"),
+        reply_markup=kbs.kb_reaction_types(),
     )
+
+
+@factory_dp.callback_query(UserStates.choosing_reaction, F.data.startswith("rtype:"))
+async def cb_choose_reaction(query: CallbackQuery, state: FSMContext) -> None:
+    rtype = query.data.split(":", 1)[1]
+    pending = _pending_token_choice.get(query.from_user.id)
+    if not pending:
+        await query.answer("🟥 الجلسة انتهت، ابدأ من جديد", show_alert=True)
+        await state.clear()
+        return
+
+    from reactions import REACTION_TYPES, get_reaction_label
+    if rtype not in REACTION_TYPES:
+        await query.answer("🟥 نوع غير معروف", show_alert=True)
+        return
+
+    # سجّل الطلب في pending مع نوع الريأكشن
+    storage.add_pending(pending["bot_id"], {
+        "token": pending["token"],
+        "username": pending["username"],
+        "first_name": pending["first_name"],
+        "owner_id": pending["owner_id"],
+        "owner_name": pending["owner_name"],
+        "reaction_type": rtype,
+    })
+
+    _pending_token_choice.pop(query.from_user.id, None)
     await state.clear()
+
+    # عدّل نفس الرسالة → تأكيد الإرسال
+    confirm_text = (
+        f"🟩 تم إرسال طلبك للمطور.\n\n"
+        f"🤖 <b>{pending['first_name']}</b> (@{pending['username']})\n"
+        f"🎭 نوع الريأكشن: <b>{get_reaction_label(rtype)}</b>\n\n"
+        f"⏳ في انتظار الموافقة..."
+    )
+    await _edit_or_send(query, confirm_text, reply_markup=kbs.kb_back("user:home"))
+    await query.answer("✅ تم الإرسال")
 
     admin_text = (
         "🆕 <b>طلب بوت جديد</b>\n\n"
-        f"🤖 البوت: <b>{info['first_name']}</b>\n"
-        f"   @{info['username']}\n"
-        f"   ID: <code>{bot_id}</code>\n\n"
-        f"👤 صاحب الطلب: {owner_name}\n"
-        f"   ID: <code>{owner.id}</code>"
+        f"🤖 البوت: <b>{pending['first_name']}</b>\n"
+        f"   @{pending['username']}\n"
+        f"   ID: <code>{pending['bot_id']}</code>\n\n"
+        f"🎭 نوع الريأكشن: <b>{get_reaction_label(rtype)}</b>\n\n"
+        f"👤 صاحب الطلب: {pending['owner_name']}\n"
+        f"   ID: <code>{pending['owner_id']}</code>"
     )
     try:
         await factory_bot.send_message(
             ADMIN_USER_ID, admin_text, parse_mode="HTML",
-            reply_markup=kbs.kb_approve(bot_id),
+            reply_markup=kbs.kb_approve(pending["bot_id"]),
         )
     except TelegramAPIError as e:
         log.error("فشل إرسال إشعار للأدمن: %s", e)
+
 
 
 # ─── موافقة / رفض ──────────────────────────────────
@@ -422,6 +567,7 @@ async def cb_approve(query: CallbackQuery) -> None:
         bot_id=bot_id, token=pending["token"],
         username=pending["username"], first_name=pending["first_name"],
         owner_id=pending["owner_id"], owner_name=pending["owner_name"],
+        reaction_type=pending.get("reaction_type", "mixed"),
     )
 
     label = f"@{pending['username']}" if pending["username"] else bot_id
@@ -436,12 +582,16 @@ async def cb_approve(query: CallbackQuery) -> None:
     except Exception:
         pass
 
+    from reactions import get_reaction_label
+    rtype_label = get_reaction_label(pending.get("reaction_type", "mixed"))
     try:
         await factory_bot.send_message(
             pending["owner_id"],
             f"🟩 <b>اتقبل بوتك!</b>\n\n"
             f"🤖 @{pending['username']} شغال دلوقتي\n"
-            f"📌 ضيفه أدمن في أي قناة وهيبدأ يحط ريأكشنز تلقائياً.",
+            f"🎭 نوع الريأكشن: <b>{rtype_label}</b>\n"
+            f"📌 ضيفه أدمن في أي قناة وهيبدأ يحط ريأكشنز تلقائياً.\n\n"
+            f"💡 تقدر تغيّر نوع الريأكشن في أي وقت من «🤖 بوتاتي».",
             parse_mode="HTML",
         )
     except TelegramAPIError:

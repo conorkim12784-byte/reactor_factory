@@ -14,6 +14,8 @@ aiogram لسه ما ضافش `style` كحقل رسمي في `InlineKeyboardButto
 """
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from reactions import REACTION_TYPES
+
 
 # ─── بنّاء داخلي مع style ─────────────────────────
 
@@ -155,3 +157,55 @@ def kb_fsub_admin(channels: list[dict]) -> InlineKeyboardMarkup:
 
 def kb_cancel_action(target: str = "adm:home") -> InlineKeyboardMarkup:
     return kb([btn_danger("إلغاء", target)])
+
+
+def kb_reaction_types(current: str | None = None) -> InlineKeyboardMarkup:
+    """
+    كيبورد اختيار نوع الريأكشن.
+    callback_data بصيغة: rtype:<key>
+    لو current = key لنوع، نحط علامة ✓ جنبه.
+    """
+    rows: list[list[InlineKeyboardButton]] = []
+    for key, info in REACTION_TYPES.items():
+        label = info["label"]
+        if current and current == key:
+            label = f"✅ {label}"
+        rows.append([btn_primary(label, f"rtype:{key}")])
+    rows.append([btn_danger("إلغاء", "user:cancel_token")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def kb_change_reaction_types(bot_id: str, current: str | None = None) -> InlineKeyboardMarkup:
+    """
+    لما المستخدم يغيّر نوع الريأكشن لبوت موجود.
+    callback_data بصيغة: rchg:<bot_id>:<key>
+    """
+    rows: list[list[InlineKeyboardButton]] = []
+    for key, info in REACTION_TYPES.items():
+        label = info["label"]
+        if current and current == key:
+            label = f"✅ {label}"
+        rows.append([btn_primary(label, f"rchg:{bot_id}:{key}")])
+    rows.append([btn_primary("🔙 رجوع لبوتاتي", "user:my_bots")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def kb_my_bots(bots: list[tuple[str, str, bool]]) -> InlineKeyboardMarkup:
+    """
+    bots: list of (bot_id, username, is_running)
+    كل بوت بيبقى زر يوديك على صفحة إعداداته.
+    """
+    rows: list[list[InlineKeyboardButton]] = []
+    for bid, uname, running in bots:
+        dot = "🟢" if running else "🔴"
+        rows.append([btn_primary(f"{dot} @{uname or bid}", f"bot:open:{bid}")])
+    rows.append([btn_primary("🔙 رجوع", "user:home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def kb_bot_settings(bot_id: str) -> InlineKeyboardMarkup:
+    return kb(
+        [btn_primary("🎭 تغيير نوع الريأكشن", f"bot:rtype:{bot_id}")],
+        [btn_primary("🔙 رجوع لبوتاتي", "user:my_bots")],
+    )
+

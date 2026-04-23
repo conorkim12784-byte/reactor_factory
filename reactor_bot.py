@@ -20,7 +20,7 @@ from aiogram.types import (
 )
 
 from config import REACTION_DELAY_MIN, REACTION_DELAY_MAX, MANUAL_PREMIUM
-from reactions import NORMAL_REACTIONS, FALLBACK_EMOJI
+from reactions import NORMAL_REACTIONS, FALLBACK_EMOJI, get_reaction_pool
 import storage
 
 
@@ -135,27 +135,44 @@ class ReactorBot:
 
     async def _pick_reaction(self, chat_id: str) -> tuple:
         """
-        يجيب الريأكشنز المتاحة من القناة ويختار واحد منها.
-        يرجّع (reaction_object, display_string).
+        يجيب الريأكشنز المتاحة من القناة، ويقاطعها مع pool النوع المختار
+        لصاحب البوت. يرجّع (reaction_object, display_string).
         """
+        # pool النوع المختار من صاحب البوت (مخزّن في tokens.json)
+        owner_pool = get_reaction_pool(storage.get_reaction_type(self.bot_id))
+
         try:
             chat_full = await self.bot.get_chat(chat_id)
             available = chat_full.available_reactions
         except TelegramAPIError:
             available = None
 
-        # القناة بتسمح بـ "all" أو مفيش بيانات → استخدم العادية
+        # القناة بتسمح بـ "all" → نختار من pool المالك مباشرة
         if not available or (
             isinstance(available, list) and len(available) == 0
         ):
-            emoji = random.choice(NORMAL_REACTIONS)
+            emoji = random.choice(owner_pool or NORMAL_REACTIONS)
             return ReactionTypeEmoji(emoji=emoji), emoji
 
-        # available list of ReactionType objects (Emoji or CustomEmoji)
+        # قاطع: شيل من available أي إيموجي مش في owner_pool
+        filtered = []
+        for r in available:
+            # نوع emoji عادي
+            if hasattr(r, "emoji") and r.emoji:
+                if r.emoji in owner_pool:
+                    filtered.append(r)
+            # custom_emoji نسيبه (تعامل خاص بالقنوات الموثقة)
+            elif hasattr(r, "custom_emoji_id") and r.custom_emoji_id:
+                filtered.append(r)
+
+        # لو القناة سامحة بحاجات بس مفيش منها أي حاجة في pool المالك
+        # ارجع إلى الـ available كاملة عشان البوت يفضل يحط ريأكشن
+        pick_from = filtered if filtered else available
+
         try:
-            pick = random.choice(available)
+            pick = random.choice(pick_from)
         except Exception:
-            emoji = random.choice(NORMAL_REACTIONS)
+            emoji = random.choice(owner_pool or NORMAL_REACTIONS)
             return ReactionTypeEmoji(emoji=emoji), emoji
 
         # نوع custom_emoji
@@ -170,7 +187,7 @@ class ReactorBot:
             return ReactionTypeEmoji(emoji=pick.emoji), pick.emoji
 
         # fallback
-        emoji = random.choice(NORMAL_REACTIONS)
+        emoji = random.choice(owner_pool or NORMAL_REACTIONS)
         return ReactionTypeEmoji(emoji=emoji), emoji
 
     async def _set_reaction(self, chat_id: str, msg_id: int, reaction) -> bool:

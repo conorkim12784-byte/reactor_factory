@@ -45,7 +45,8 @@ def save_tokens(tokens: dict) -> None:
 
 
 def add_token(bot_id: str, token: str, username: str, first_name: str,
-              owner_id: int, owner_name: str) -> None:
+              owner_id: int, owner_name: str,
+              reaction_type: str = "mixed") -> None:
     tokens = load_tokens()
     tokens[bot_id] = {
         "token": token,
@@ -53,10 +54,26 @@ def add_token(bot_id: str, token: str, username: str, first_name: str,
         "first_name": first_name,
         "owner_id": owner_id,
         "owner_name": owner_name,
+        "reaction_type": reaction_type,
         "added_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "active": True,
     }
     save_tokens(tokens)
+
+
+def get_reaction_type(bot_id: str) -> str:
+    tokens = load_tokens()
+    info = tokens.get(bot_id) or {}
+    return info.get("reaction_type") or "mixed"
+
+
+def set_reaction_type(bot_id: str, reaction_type: str) -> bool:
+    tokens = load_tokens()
+    if bot_id not in tokens:
+        return False
+    tokens[bot_id]["reaction_type"] = reaction_type
+    save_tokens(tokens)
+    return True
 
 
 def remove_token(bot_id: str) -> None:

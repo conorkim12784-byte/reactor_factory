@@ -2,6 +2,7 @@
 قوايم الريأكشنز:
 - PREMIUM_REACTIONS: custom_emoji IDs للقنوات الموثقة (حزمة خلودي @F44II)
 - NORMAL_REACTIONS: emojis عادية للقنوات العادية
+- REACTION_POOLS: مجموعات منفصلة بحسب نوع الريأكشن اللي صاحب البوت يختاره
 """
 
 # 💎 ريأكشنز القنوات الموثقة — custom emoji IDs
@@ -75,7 +76,7 @@ PREMIUM_REACTIONS = [
     "5330441214795742551", "5409379020024345559",
 ]
 
-# 📢 ريأكشنز القنوات العادية
+# 📢 ريأكشنز القنوات العادية (المجموعة الكاملة المختلطة)
 NORMAL_REACTIONS = [
     "👍", "❤️", "🔥", "🥰", "👏",
     "😁", "🎉", "🤔", "😱", "🙏",
@@ -84,3 +85,79 @@ NORMAL_REACTIONS = [
 
 # fallback ثابت لو كل حاجة فشلت
 FALLBACK_EMOJI = "❤️"
+
+
+# ─── أنواع الريأكشن اللي يقدر صاحب البوت يختار منها ───
+# كل نوع له:
+#   - key: المعرف الداخلي
+#   - label: النص الظاهر للمستخدم
+#   - emojis: قائمة الإيموجيز اللي البوت يختار منها عشوائياً
+#
+# لو القناة بتسمح بريأكشنز محددة بس، الريأكتر هيقاطعها مع المجموعة دي،
+# وأي إيموجي مش متاح هنتجاهله.
+
+REACTION_TYPES: dict[str, dict] = {
+    "mixed": {
+        "label": "🎲 مختلط (افتراضي)",
+        "emojis": NORMAL_REACTIONS,
+        "desc": "كل الريأكشنز الشائعة بشكل عشوائي",
+    },
+    "positive": {
+        "label": "👍 إيجابي فقط",
+        "emojis": ["👍", "❤️", "🔥", "🥰", "👏", "😁", "🎉", "😍", "💯", "🏆", "🙏", "⚡"],
+        "desc": "ريأكشنز إيجابية ومدح",
+    },
+    "love": {
+        "label": "❤️ حب ورومانسي",
+        "emojis": ["❤️", "🥰", "😍", "💋", "❤‍🔥", "🤗", "🌹"],
+        "desc": "قلوب وحب فقط",
+    },
+    "fire": {
+        "label": "🔥 حماس ونار",
+        "emojis": ["🔥", "⚡", "💯", "🏆", "👏", "🎉", "🤩"],
+        "desc": "حماس وتصفيق",
+    },
+    "fun": {
+        "label": "😂 ضحك ومرح",
+        "emojis": ["🤣", "😁", "😍", "🥰", "🎉", "🤩", "🤗"],
+        "desc": "ضحك ومرح",
+    },
+    "wow": {
+        "label": "😱 صدمة وذهول",
+        "emojis": ["😱", "🤔", "🤯", "👀", "😨", "🙊"],
+        "desc": "صدمة وتفاعل قوي",
+    },
+    "negative": {
+        "label": "👎 سلبي",
+        "emojis": ["👎", "🤬", "😢", "😭", "💩", "🤮", "🤡"],
+        "desc": "ريأكشنز سلبية (استخدمه بحذر)",
+    },
+    "heart_only": {
+        "label": "❤️ قلب أحمر فقط",
+        "emojis": ["❤️"],
+        "desc": "قلب أحمر ثابت على كل منشور",
+    },
+    "fire_only": {
+        "label": "🔥 نار فقط",
+        "emojis": ["🔥"],
+        "desc": "🔥 ثابت على كل منشور",
+    },
+    "thumbs_only": {
+        "label": "👍 لايك فقط",
+        "emojis": ["👍"],
+        "desc": "👍 ثابت على كل منشور",
+    },
+}
+
+DEFAULT_REACTION_TYPE = "mixed"
+
+
+def get_reaction_pool(type_key: str) -> list[str]:
+    """يرجّع قائمة الإيموجيز المرتبطة بالنوع، ولو النوع غير معروف يرجّع الافتراضي."""
+    info = REACTION_TYPES.get(type_key) or REACTION_TYPES[DEFAULT_REACTION_TYPE]
+    return list(info["emojis"])
+
+
+def get_reaction_label(type_key: str) -> str:
+    info = REACTION_TYPES.get(type_key) or REACTION_TYPES[DEFAULT_REACTION_TYPE]
+    return info["label"]
