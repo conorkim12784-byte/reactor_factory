@@ -205,7 +205,7 @@ async def enforce_subscription(user_id: int, target_chat_id: int) -> bool:
 
 async def send_start_screen(chat_id: int, user_id: int, user_name: str = "") -> None:
     greeting = (        f"""
-╭───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤
+╭──────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──────⟤
 ╭───────────⟢
 ╞𝗧- <b>{user_name or ''}</b>
 ╞╡ 
@@ -220,7 +220,7 @@ async def send_start_screen(chat_id: int, user_id: int, user_name: str = "") -> 
 ╭────────────╯
 ╞𝗧- ضيـف الـبوت ادمـن في قناتك 
 ╰───────────⟢
-╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"""
+╰──────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──────⟤"""
     )
     keyboard = kbs.kb_admin_main() if is_admin(user_id) else kbs.kb_user_main()
     try:
@@ -291,7 +291,7 @@ async def cb_user_home(query: CallbackQuery, state: FSMContext) -> None:
         await query.answer()
         return
     text = f"""
-╭───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤
+╭──────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──────⟤
 ╭───────────⟢
 ╞𝗧- <b>{query.from_user.full_name}</b>
 ╞╡ 
@@ -306,7 +306,7 @@ async def cb_user_home(query: CallbackQuery, state: FSMContext) -> None:
 ╭────────────╯
 ╞𝗧- ضيـف الـبوت ادمـن في قناتك 
 ╰───────────⟢
-╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"""
+╰──────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──────⟤"""
     await _edit_or_send(query, text, reply_markup=kbs.kb_user_main())
     await query.answer()
 
@@ -334,7 +334,7 @@ async def cb_user_cancel_token(query: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     _pending_token_choice.pop(query.from_user.id, None)
     text = f"""
-╭───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤
+╭──────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──────⟤
 ╭───────────⟢
 ╞𝗧- <b>{query.from_user.full_name}</b>
 ╞╡ 
@@ -349,7 +349,7 @@ async def cb_user_cancel_token(query: CallbackQuery, state: FSMContext) -> None:
 ╭────────────╯
 ╞𝗧- ضيـف الـبوت ادمـن في قناتك 
 ╰───────────⟢
-╰───⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁───⟤"""
+╰──────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──────⟤"""
     await _edit_or_send(query, text, reply_markup=kbs.kb_user_main())
     await query.answer("اتلغى")
 
@@ -454,19 +454,19 @@ async def cb_bot_rtype_set(query: CallbackQuery) -> None:
 @factory_dp.callback_query(F.data == "user:help")
 async def cb_user_help(query: CallbackQuery) -> None:
     text = (
-        "╔══════ ♞ ══════╗\n"
-        "   <b>🏭 دليل المصنع</b>\n"
-        "╚══════ ♞ ══════╝\n"
         "\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "   <b>🏭 دليل المصنع</b>\n"
+        "\n"
+        "\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "<b> يعني إيه المصنع؟</b>\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "<i>منصة بتخليك تعمل بوت ريأكشن خاص بيك،\n"
         "يحط تفاعلات تلقائي على كل منشور في قناتك.</i>\n"
         "\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "<b> خطوات التشغيل</b>\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "\n"
         " <b>𝟏 ▸ اعمل بوت</b>\n"
         "   روح <a href=\"https://t.me/BotFather\">@BotFather</a>\n"
@@ -502,25 +502,25 @@ async def cb_user_help(query: CallbackQuery) -> None:
         "   تلقائي خلال ثواني.\n"
         "└──────────────\n"
         "\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "<b>🎭 أنواع الريأكشن</b>\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "👍 إيجابي  •  ❤️ حب  •  🔥 حماس\n"
         "😂 ضحك  •  😱 صدمة  •  🎉 احتفال\n"
         "<i>تقدر تغيّر النوع في أي وقت من «🤖 بوتاتي».</i>\n"
         "\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "<b>💡 نصايح سريعة</b>\n"
-        "<b>──⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁──</b>\n"
+        "<b>─────⌁𝗧𝗹𝗔𝘀𝗛𝗮𝗡𝘆⌁─────</b>\n"
         "▸ تأكد إن البوت أدمن فعلاً.\n"
         "▸ لو البوت مرفوع قبل كده ادمن نزله وارفعه ثاني.\n"
         "▸ لازم القناة تسمح بالتفاعلات.\n"
         "▸ نوع الريأكشن بيتطابق مع تفاعلات\n"
         "   القناة المسموح بيها.\n"
         "\n"
-        "╔══════ ♞ ══════╗\n"
+        "\n"
         "   <b>تفضّل ابدأ دلوقتي</b>\n"
-        "╚══════ ♞ ══════╝"
+        ""
     )
     await _edit_or_send(query, text, reply_markup=kbs.kb_back("user:home"))
     await query.answer()
